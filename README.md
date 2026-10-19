@@ -5,7 +5,7 @@ A responsive single-page web application built with **HTML5, Tailwind CSS, and V
 ---
 
 ## 🚀 Live Demo
-* **Live Site:** [Add your deployed link here, e.g., Netlify / GitHub Pages]
+* **Live Site:** https://shafin92.github.io/Drink-Explorer/
 
 ---
 
