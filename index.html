@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drink Explorer</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans text-gray-800">
+
+  <!-- Header & Search Bar (Question 2) -->
+  <header class="bg-indigo-600 text-white py-6 shadow-md">
+    <div class="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+      <h1 class="text-2xl font-bold tracking-wide">🍸 Drink Explorer</h1>
+      
+      <!-- Search Component -->
+      <div class="flex w-full md:w-1/3">
+        <input 
+          type="text" 
+          id="search-input" 
+          placeholder="Search for a drink (e.g., Margarita)..." 
+          class="w-full px-4 py-2 text-gray-800 rounded-l-md focus:outline-none"
+        />
+        <button 
+          id="search-btn" 
+          class="bg-indigo-800 hover:bg-indigo-900 px-5 py-2 font-semibold rounded-r-md transition duration-200">
+          Search
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container: 2-Column Layout (Question 4) -->
+  <main class="container mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+    
+    <!-- Column 1: Drinks Container (Question 1, 2, 3) -->
+    <section class="lg:col-span-2">
+      <h2 class="text-xl font-bold mb-4 text-gray-700">Available Drinks</h2>
+      <div id="drinks-container" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <!-- Dynamic Cards Inserted Here -->
+      </div>
+      <!-- Not Found Message (Question 2) -->
+      <div id="not-found" class="hidden text-center py-12">
+        <p class="text-2xl font-bold text-red-500">No drinks found!</p>
+        <p class="text-gray-500">Please try searching for another drink name.</p>
+      </div>
+    </section>
+
+    <!-- Column 2: Selected Group Sidebar (Question 4 & 5) -->
+    <section class="bg-white p-6 rounded-lg shadow-md h-fit">
+      <div class="border-b pb-3 mb-4 flex justify-between items-center">
+        <h2 class="text-xl font-bold text-gray-800">My Group</h2>
+        <span class="bg-indigo-100 text-indigo-800 text-sm font-semibold px-3 py-1 rounded-full">
+          Total: <span id="group-count">0</span>/7
+        </span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b text-gray-500 text-sm">
+              <th class="py-2">No.</th>
+              <th class="py-2">Drink Name</th>
+            </tr>
+          </thead>
+          <tbody id="group-list" class="divide-y text-gray-700 text-sm">
+            <!-- Group items added dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Details Modal (Question 7) -->
+  <div id="details-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-4 z-50">
+    <div class="bg-white rounded-lg max-w-md w-full p-6 relative shadow-xl">
+      <button 
+        id="close-modal-btn" 
+        class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-2xl font-bold">
+        &times;
+      </button>
+      <div id="modal-content">
+        <!-- Dynamic Modal Info Inserted Here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    let group = [];
+
+    const drinksContainer = document.getElementById('drinks-container');
+    const notFoundDiv = document.getElementById('not-found');
+    const searchInput = document.getElementById('search-input');
+    const searchBtn = document.getElementById('search-btn');
+    const groupList = document.getElementById('group-list');
+    const groupCount = document.getElementById('group-count');
+    const detailsModal = document.getElementById('details-modal');
+    const modalContent = document.getElementById('modal-content');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+
+    // Instructions 15 letters limit (Question 3)
+    const truncateText = (str, limit = 15) => {
+      if (!str) return 'N/A';
+      return str.length > limit ? str.slice(0, limit) + '...' : str;
+    };
+
+    // Load Default 10 Drinks (Question 1)
+    const loadDefaultDrinks = async () => {
+      try {
+        const res = await fetch('https://www.thecocktaildb.com/api/json/v1/1/search.php?s=a');
+        const data = await res.json();
+        if (data.drinks) {
+          displayDrinks(data.drinks.slice(0, 10));
+        }
+      } catch (error) {
+        console.error('Error fetching default drinks:', error);
+      }
+    };
+
+    // Render Drinks (Question 3)
+    const displayDrinks = (drinks) => {
+      drinksContainer.innerHTML = '';
+      if (!drinks) {
+        notFoundDiv.classList.remove('hidden');
+        return;
+      }
+      notFoundDiv.classList.add('hidden');
+
+      drinks.forEach(drink => {
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-lg shadow-md overflow-hidden flex flex-col justify-between border border-gray-100";
+
+        card.innerHTML = `
+          <img src="${drink.strDrinkThumb}" alt="${drink.strDrink}" class="w-full h-48 object-cover" />
+          <div class="p-4 flex-1 flex flex-col justify-between">
+            <div>
+              <h3 class="font-bold text-lg text-gray-800">${drink.strDrink}</h3>
+              <p class="text-sm font-semibold text-indigo-600 mb-2">Category: ${drink.strCategory || 'N/A'}</p>
+              <p class="text-xs text-gray-600 mb-4" title="${drink.strInstructions}">
+                <span class="font-semibold">Instructions:</span> ${truncateText(drink.strInstructions, 15)}
+              </p>
+            </div>
+            <div class="flex gap-2 mt-auto">
+              <button 
+                onclick="addToGroup('${drink.strDrink.replace(/'/g, "\\'")}')" 
+                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2 px-3 rounded transition">
+                Add to Group
+              </button>
+              <button 
+                onclick="showDetails('${drink.idDrink}')" 
+                class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-semibold py-2 px-3 rounded transition">
+                Details
+              </button>
+            </div>
+          </div>
+        `;
+        drinksContainer.appendChild(card);
+      });
+    };
+
+    // Search Logic (Question 2)
+    const handleSearch = async () => {
+      const query = searchInput.value.trim();
+      if (!query) return;
+
+      try {
+        const res = await fetch(`https://www.thecocktaildb.com/api/json/v1/1/search.php?s=${query}`);
+        const data = await res.json();
+        displayDrinks(data.drinks);
+      } catch (error) {
+        console.error('Error searching drinks:', error);
+      }
+    };
+
+    // Add to Group Logic (Question 5 & 6)
+    const addToGroup = (drinkName) => {
+      if (group.length >= 7) {
+        alert("You cannot add more than 7 drinks to a group!");
+        return;
+      }
+      group.push(drinkName);
+      updateGroupUI();
+    };
+
+    const updateGroupUI = () => {
+      groupCount.innerText = group.length;
+      groupList.innerHTML = '';
+
+      group.forEach((name, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="py-2 font-medium">${index + 1}</td>
+          <td class="py-2">${name}</td>
+        `;
+        groupList.appendChild(tr);
+      });
+    };
+
+    // Details Modal (Question 7 - 5 Information points)
+    const showDetails = async (id) => {
+      try {
+        const res = await fetch(`https://www.thecocktaildb.com/api/json/v1/1/lookup.php?i=${id}`);
+        const data = await res.json();
+        const drink = data.drinks[0];
+
+        modalContent.innerHTML = `
+          <img src="${drink.strDrinkThumb}" alt="${drink.strDrink}" class="w-full h-44 object-cover rounded-md mb-4" />
+          <h2 class="text-xl font-bold mb-2">${drink.strDrink}</h2>
+          <div class="space-y-1 text-sm text-gray-700">
+            <p><span class="font-semibold">1. Category:</span> ${drink.strCategory || 'N/A'}</p>
+            <p><span class="font-semibold">2. Type:</span> ${drink.strAlcoholic || 'N/A'}</p>
+            <p><span class="font-semibold">3. Glass:</span> ${drink.strGlass || 'N/A'}</p>
+            <p><span class="font-semibold">4. Main Ingredient:</span> ${drink.strIngredient1 || 'N/A'}</p>
+            <p class="mt-2"><span class="font-semibold">5. Instructions:</span> ${drink.strInstructions || 'N/A'}</p>
+          </div>
+        `;
+        detailsModal.classList.remove('hidden');
+        detailsModal.classList.add('flex');
+      } catch (error) {
+        console.error('Error fetching drink details:', error);
+      }
+    };
+
+    // Listeners
+    searchBtn.addEventListener('click', handleSearch);
+    searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSearch(); });
+    closeModalBtn.addEventListener('click', () => { detailsModal.classList.add('hidden'); detailsModal.classList.remove('flex'); });
+    window.addEventListener('click', (e) => { if (e.target === detailsModal) { detailsModal.classList.add('hidden'); detailsModal.classList.remove('flex'); } });
+
+    loadDefaultDrinks();
+  </script>
+</body>
+</html>
